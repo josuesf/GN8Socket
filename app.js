@@ -11,7 +11,8 @@ app.get('/', function (req, res) {
 });
 var server = http.Server(app);
 var websocket = socketio(server);
-server.listen(80, () => console.log('listening on *:80'));
+var port = process.env.PORT || 8080;
+server.listen(port, () => console.log('listening on *:80'));
 
 // Mapping objects to easily map sockets and users.
 var clients = {};
