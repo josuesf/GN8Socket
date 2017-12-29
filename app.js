@@ -67,7 +67,7 @@ function _sendExistingMessages(socket) {
     .toArray((err, messages) => {
       // If there aren't any messages, then return.
       if (!messages.length) return;
-      socket.emit('message', messages.reverse());
+      socket.emit('message', messages);
   });
 }
 
