@@ -63,7 +63,7 @@ function onMessageReceived(message, senderSocket) {
 function _sendExistingMessages(socket) {
   var messages = db.collection('message')
     .find()
-    .sort({ createdAt: 1 })
+    //.sort({ createdAt: 1 })
     .toArray((err, messages) => {
       // If there aren't any messages, then return.
       if (!messages.length) return;
