@@ -8,7 +8,7 @@ var db = mongojs(process.env.MONGO_URL || 'mongodb://gn8user:#goodNight@ds157653
 var app = express();
 var server = http.Server(app);
 var websocket = socketio(server);
-server.listen(3000, () => console.log('listening on *:3000'));
+server.listen(80, () => console.log('listening on *:80'));
 
 // Mapping objects to easily map sockets and users.
 var clients = {};
