@@ -6,9 +6,12 @@ var mongojs = require('mongojs');
 var ObjectID = mongojs.ObjectID; //mongodb://<dbuser>:<dbpassword>@ds157653.mlab.com:57653/gn8db
 var db = mongojs(process.env.MONGO_URL || 'mongodb://gn8user:#goodNight@ds157653.mlab.com:57653/gn8db');
 var app = express();
+app.get('/', function (req, res) {
+  res.send('Hello World!');
+});
 var server = http.Server(app);
 var websocket = socketio(server);
-server.listen(3000, () => console.log('listening on *:80'));
+server.listen(80, () => console.log('listening on *:80'));
 
 // Mapping objects to easily map sockets and users.
 var clients = {};
