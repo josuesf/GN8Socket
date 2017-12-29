@@ -4,7 +4,7 @@
   "description": "Sockets para gn8",
   "main": "index.js",
   "scripts": {
-    "server": "nodemon server",
+    "server": "nodemon server"
   },
   "author": "",
   "license": "ISC",
