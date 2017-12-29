@@ -12,7 +12,7 @@ app.get('/', function (req, res) {
 var server = http.Server(app);
 var websocket = socketio(server);
 var port = process.env.PORT || 8080;
-server.listen(port, () => console.log('listening on *:80'));
+server.listen(port, () => console.log('listening on '+port));
 
 // Mapping objects to easily map sockets and users.
 var clients = {};
@@ -26,7 +26,7 @@ websocket.on('connection', (socket) => {
     clients[socket.id] = socket;
     console.log(socket.id)
     _sendExistingMessages(socket);
-    // socket.on('message', (message) => onMessageReceived(message, socket));
+    socket.on('message', (message) => _sendAndSaveMessage(message, socket));
 });
 
 // Event listeners.
@@ -76,11 +76,12 @@ function _sendAndSaveMessage(message, socket, fromServer) {
   var messageData = {
     text: message.text,
     user: message.user,
-    createdAt: new Date(message.createdAt),
-    chatId: chatId
+    photo_url:message.photo_url,
+    id_post: message.id_post,
+    id_user:message.id_user
   };
 
-  db.collection('messages').insert(messageData, (err, message) => {
+  db.collection('message').insert(messageData, (err, message) => {
     // If the message is from the server, then send to everyone.
     var emitter = fromServer ? websocket : socket.broadcast;
     emitter.emit('message', [message]);
