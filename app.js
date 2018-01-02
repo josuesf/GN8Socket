@@ -25,18 +25,19 @@ app.post('/ws/create_post', function (req, res) {
   var inputs = req.body;
   if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario ||
     !inputs.likesCount || !inputs.liked || !inputs.codigoQR ||
-    !inputs.nombre_usuario||!inputs.photo_url)
+    !inputs.nombre_usuario || !inputs.photo_url)
     return res.json({ res: "error", detail: "Complete todos los campos" })
-  var photo_post='';
+  var photo_post = '';
   var post = {
     nombre_post: inputs.nombre_post,
-    photo_post:photo_post,
+    photo_post: photo_post,
     descripcion: inputs.descripcion,
     id_usuario: inputs.id_usuario,
-    nombre_usuario:inputs.nombre_usuario,
-    photo_url:inputs.photo_url,
+    nombre_usuario: inputs.nombre_usuario,
+    photo_url: inputs.photo_url,
     likesCount: inputs.likesCount,
     liked: inputs.liked,
+    commentsCount: 0,
     codigoQR: inputs.codigoQR,
     createdAt: new Date(),
     updateAt: new Date()
@@ -51,14 +52,14 @@ app.post('/ws/create_post', function (req, res) {
   });
 
 });
-app.post('/ws/posts/',function(req,res){
+app.post('/ws/posts/', function (req, res) {
   var posts = db.collection('posts')
     .find({})
     .sort({ createdAt: 1 })
     .toArray((err, posts) => {
       // If there aren't any posts, then return.
       if (!posts.length) return res.json({ res: "error", post: [] });
-      res.json({res:"ok",posts});
+      res.json({ res: "ok", posts });
     });
 })
 /**
@@ -66,12 +67,12 @@ app.post('/ws/posts/',function(req,res){
  */
 app.post('/ws/comments', function (req, res) {
   var messages = db.collection('message')
-    .find({id_post:req.body.id_post})
+    .find({ id_post: req.body.id_post })
     //.sort({ createdAt: 1 })
     .toArray((err, messages) => {
       // If there aren't any messages, then return.
       if (!messages.length) return res.json({ res: "error", comments: [] });
-      res.json({res:"ok",comments:messages});
+      res.json({ res: "ok", comments: messages });
     });
 
 });
@@ -81,6 +82,10 @@ app.post('/ws/comments', function (req, res) {
 
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
+  socket.on('disconnect', function () {
+    console.log('se desconecto',socket.id)
+
+  });
 });
 
 
@@ -95,9 +100,16 @@ function _sendAndSaveMessage(message, socket, fromServer) {
   };
 
   db.collection('message').insert(messageData, (err, message) => {
-    // If the message is from the server, then send to everyone.
-    var emitter = fromServer ? websocket : socket.broadcast;
-    emitter.emit('message', [message]);
+    console.log(message.id_post)
+    const id = mongojs.ObjectId(message.id_post)
+    db.collection('posts').update(
+      { _id: id }, { $inc: { commentsCount: 1 } }, function (err, post) {
+        // the update is complete 
+        if (err) console.log(err)
+        // If the message is from the server, then send to everyone.
+        var emitter = fromServer ? websocket : socket.broadcast;
+        emitter.emit('message', [message]);
+      })
   });
 }
 
