@@ -23,8 +23,8 @@ app.get('/', function (req, res) {
  */
 app.post('/ws/create_post', function (req, res) {
   var inputs = req.body;
-  if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario ||
-    !inputs.likesCount || !inputs.liked || !inputs.codigoQR ||
+  if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario
+     || !inputs.codigoQR ||
     !inputs.nombre_usuario || !inputs.photo_url)
     return res.json({ res: "error", detail: "Complete todos los campos" })
   var photo_post = '';
@@ -35,8 +35,8 @@ app.post('/ws/create_post', function (req, res) {
     id_usuario: inputs.id_usuario,
     nombre_usuario: inputs.nombre_usuario,
     photo_url: inputs.photo_url,
-    likesCount: inputs.likesCount,
-    liked: inputs.liked,
+    likesCount: 0,
+    liked: {},
     commentsCount: 0,
     codigoQR: inputs.codigoQR,
     createdAt: new Date(),
@@ -82,6 +82,7 @@ app.post('/ws/comments', function (req, res) {
 
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
+  socket.on('like_post',(like)=> _guardarLikePost(like,socket))
   socket.on('disconnect', function () {
     console.log('se desconecto',socket.id)
 
@@ -112,7 +113,21 @@ function _sendAndSaveMessage(message, socket, fromServer) {
       })
   });
 }
-
+function _guardarLikePost(like,socket){
+  const id = mongojs.ObjectId(like.id_post)
+  const campo="liked."+like.id_user
+  db.collection('posts').update(
+    { _id: id }, 
+    { $set:{[campo]:like},
+    $inc: { likesCount: like.like?1:-1 } }, function (err, res) {
+      // the update is complete 
+      console.log(res)
+      if (err) console.log(err)
+      // If the message is from the server, then send to everyone.
+      var emitter = socket.broadcast;
+      emitter.emit('like_post', like);
+    })
+}
 // Allow the server to participate in the chatroom through stdin.
 var stdin = process.openStdin();
 stdin.addListener('data', function (d) {
