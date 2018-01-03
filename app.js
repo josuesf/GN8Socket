@@ -55,7 +55,7 @@ app.post('/ws/create_post', function (req, res) {
 app.post('/ws/posts/', function (req, res) {
   var posts = db.collection('posts')
     .find({})
-    .sort({ createdAt: 1 })
+    //.sort({ createdAt: 1 })
     .toArray((err, posts) => {
       // If there aren't any posts, then return.
       if (!posts.length) return res.json({ res: "error", post: [] });
@@ -97,7 +97,9 @@ function _sendAndSaveMessage(message, socket, fromServer) {
     user: message.user,
     photo_url: message.photo_url,
     id_post: message.id_post,
-    id_user: message.id_user
+    id_user: message.id_user,
+    createdAt: new Date(),
+    updateAt: new Date()
   };
 
   db.collection('message').insert(messageData, (err, message) => {
