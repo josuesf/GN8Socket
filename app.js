@@ -3,10 +3,14 @@ var http = require('http')
 var socketio = require('socket.io');
 var mongojs = require('mongojs');
 
+var multer = require('multer')
+var aws = require('aws-sdk')
+var multerS3 = require('multer-s3')
+
 var ObjectID = mongojs.ObjectID; //mongodb://<dbuser>:<dbpassword>@ds157653.mlab.com:57653/gn8db
 var db = mongojs(process.env.MONGO_URL || 'mongodb://gn8user:#goodNight@ds157653.mlab.com:57653/gn8db');
 var app = express();
-var server = http.Server(app);
+var server = http.createServer(app);
 var websocket = socketio(server);
 var port = process.env.PORT || 8080;
 server.listen(port, () => console.log('listening on ' + port));
@@ -21,13 +25,31 @@ app.get('/', function (req, res) {
  * Creacion de un post
  * Paramentros : nombre_post,descripcion,id_usuario,likesCount,liked,codigoQR,createdAt,updateAt
  */
-app.post('/ws/create_post', function (req, res) {
+var s3 = new aws.S3({
+  accessKeyId: 'AKIAIOIOKOQT5IY7JUPQ',
+  secretAccessKey: '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'
+})
+var storage = multerS3({
+  s3: s3,
+  bucket: 'gn8images',
+  acl: 'public-read',
+  metadata: function (req, file, cb) {
+    cb(null, { fieldName: file.fieldname })
+  },
+  key: function (req, file, cb) {
+    cb(null, file.originalname)
+  }
+})
+var upload = multer({ storage: storage })
+
+app.post('/ws/create_post', upload.single('picture'), function (req, res, next) {
   var inputs = req.body;
-  if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario
-     || !inputs.codigoQR ||
-    !inputs.nombre_usuario || !inputs.photo_url)
-    return res.json({ res: "error", detail: "Complete todos los campos" })
-  var photo_post = '';
+
+  // if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario
+  //   || !inputs.codigoQR ||
+  //   !inputs.nombre_usuario || !inputs.photo_url)
+  //   return res.json({ res: "error", detail: "Complete todos los campos" })
+  var photo_post = 'https://s3.us-east-2.amazonaws.com/gn8images/'+req.file.originalname;
   var post = {
     nombre_post: inputs.nombre_post,
     photo_post: photo_post,
@@ -38,15 +60,16 @@ app.post('/ws/create_post', function (req, res) {
     likesCount: 0,
     liked: {},
     commentsCount: 0,
-    codigoQR: inputs.codigoQR,
+    codigoqr: inputs.codigoqr=='1'?true:false,
+    codigoqr_des:inputs.codigoqr_des,
     createdAt: new Date(),
     updateAt: new Date()
   }
-
+ 
   db.collection('posts').insert(post, (err, post) => {
     if (err) return res.json({ res: "error", detail: err })
     // enviar a todos los sockets que estan escuchando
-    websocket.emit('message', [post]);
+    websocket.emit('posts', post);
     //Enviar respueta post
     return res.json({ res: "ok", post })
   });
@@ -55,7 +78,7 @@ app.post('/ws/create_post', function (req, res) {
 app.post('/ws/posts/', function (req, res) {
   var posts = db.collection('posts')
     .find({})
-    //.sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .toArray((err, posts) => {
       // If there aren't any posts, then return.
       if (!posts.length) return res.json({ res: "error", post: [] });
@@ -82,9 +105,9 @@ app.post('/ws/comments', function (req, res) {
 
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
-  socket.on('like_post',(like)=> _guardarLikePost(like,socket))
+  socket.on('like_post', (like) => _guardarLikePost(like, socket))
   socket.on('disconnect', function () {
-    console.log('se desconecto',socket.id)
+    console.log('se desconecto', socket.id)
 
   });
 });
@@ -111,17 +134,19 @@ function _sendAndSaveMessage(message, socket, fromServer) {
         if (err) console.log(err)
         // If the message is from the server, then send to everyone.
         var emitter = fromServer ? websocket : socket.broadcast;
-        emitter.emit('message', [message]);
+        websocket.emit('message', [message]);
       })
   });
 }
-function _guardarLikePost(like,socket){
+function _guardarLikePost(like, socket) {
   const id = mongojs.ObjectId(like.id_post)
-  const campo="liked."+like.id_user
+  const campo = "liked." + like.id_user
   db.collection('posts').update(
-    { _id: id }, 
-    { $set:{[campo]:like},
-    $inc: { likesCount: like.like?1:-1 } }, function (err, res) {
+    { _id: id },
+    {
+      $set: { [campo]: like },
+      $inc: { likesCount: like.like ? 1 : -1 }
+    }, function (err, res) {
       // the update is complete 
       console.log(res)
       if (err) console.log(err)
