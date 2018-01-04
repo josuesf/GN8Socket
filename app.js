@@ -26,8 +26,8 @@ app.get('/', function (req, res) {
  * Paramentros : nombre_post,descripcion,id_usuario,likesCount,liked,codigoQR,createdAt,updateAt
  */
 var s3 = new aws.S3({
-  accessKeyId: 'AKIAJXTXAWZJV4P7TXFA',
-  secretAccessKey: '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'
+  accessKeyId: 'AKIAJEIWQ3BQXGRR2UZA',
+  secretAccessKey: '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'
 })
 var storage = multerS3({
   s3: s3,
