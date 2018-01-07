@@ -108,6 +108,17 @@ app.post('/ws/posts/', function (req, res) {
       res.json({ res: "ok", posts });
     });
 })
+app.post('/ws/invitaciones_user/', function (req, res) {
+  var invitaciones = db.collection('invitaciones')
+    .find({id_usuario_invitado:req.body.id_usuario_invitado})
+    .skip(10 * (req.body.page - 1)).limit(10)
+    .sort({ createdAt: -1 })
+    .toArray((err, invitaciones) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", invitaciones });
+    });
+})
 app.post('/ws/getCodigo_Usuario/', function (req, res) {
   var posts = db.collection('invitaciones')
     .find({
