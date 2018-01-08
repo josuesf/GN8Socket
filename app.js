@@ -87,7 +87,7 @@ app.post('/ws/generarCodigoQR', function (req, res) {
     id_usuario: inputs.id_usuario,
     nombre_usuario: inputs.nombre_usuario,
     photo_url: inputs.photo_url,
-
+    estado:"WAIT",
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -108,9 +108,31 @@ app.post('/ws/posts/', function (req, res) {
       res.json({ res: "ok", posts });
     });
 })
+app.post('/ws/posts_user/', function (req, res) {
+  var posts = db.collection('posts')
+    .find({id_usuario:req.body.id_usuario})
+    .skip(5 * (req.body.page - 1)).limit(5)
+    .sort({ createdAt: -1 })
+    .toArray((err, posts) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", posts });
+    });
+})
 app.post('/ws/invitaciones_user/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({id_usuario_invitado:req.body.id_usuario_invitado})
+    .find({id_usuario_invitado:req.body.id_usuario_invitado,estado:"WAIT"})
+    .skip(10 * (req.body.page - 1)).limit(10)
+    .sort({ createdAt: -1 })
+    .toArray((err, invitaciones) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", invitaciones });
+    });
+})
+app.post('/ws/invitaciones_user_check/', function (req, res) {
+  var invitaciones = db.collection('invitaciones')
+    .find({id_usuario_invitado:req.body.id_usuario_invitado,estado:"CHECK"})
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
