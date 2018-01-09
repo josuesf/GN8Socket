@@ -17,7 +17,7 @@ server.listen(port, () => console.log('listening on ' + port));
 var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-
+app.use('/uploads', express.static('uploads'));
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
@@ -25,7 +25,7 @@ app.get('/', function (req, res) {
  * Creacion de un post
  * Paramentros : nombre_post,descripcion,id_usuario,likesCount,liked,codigoQR,createdAt,updateAt
  */
-var s3 = new aws.S3({
+/*var s3 = new aws.S3({
   accessKeyId: process.env.S3_KEY,
   secretAccessKey: process.env.S3_SECRET
 })
@@ -39,6 +39,14 @@ var storage = multerS3({
   key: function (req, file, cb) {
     cb(null, file.originalname)
   }
+})*/
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname)
+  }
 })
 var upload = multer({ storage: storage })
 
@@ -49,7 +57,7 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
   //   || !inputs.codigoQR ||
   //   !inputs.nombre_usuario || !inputs.photo_url)
   //   return res.json({ res: "error", detail: "Complete todos los campos" })
-  var photo_post = 'https://s3.us-east-2.amazonaws.com/gn8images/' + req.file.originalname;
+  var photo_post = '/uploads/' + req.file.originalname;
   var post = {
     nombre_post: inputs.nombre_post,
     photo_post: photo_post,
