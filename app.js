@@ -95,7 +95,7 @@ app.post('/ws/generarCodigoQR', function (req, res) {
     id_usuario: inputs.id_usuario,
     nombre_usuario: inputs.nombre_usuario,
     photo_url: inputs.photo_url,
-    estado:"WAIT",
+    estado: "WAIT",
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -118,7 +118,7 @@ app.post('/ws/posts/', function (req, res) {
 })
 app.post('/ws/posts_user/', function (req, res) {
   var posts = db.collection('posts')
-    .find({id_usuario:req.body.id_usuario})
+    .find({ id_usuario: req.body.id_usuario })
     .skip(5 * (req.body.page - 1)).limit(5)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
@@ -129,7 +129,7 @@ app.post('/ws/posts_user/', function (req, res) {
 })
 app.post('/ws/invitaciones_user/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({id_usuario_invitado:req.body.id_usuario_invitado,estado:"WAIT"})
+    .find({ id_usuario_invitado: req.body.id_usuario_invitado, estado: "WAIT" })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
@@ -140,7 +140,7 @@ app.post('/ws/invitaciones_user/', function (req, res) {
 })
 app.post('/ws/invitaciones_user_check/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({id_usuario_invitado:req.body.id_usuario_invitado,estado:"CHECK"})
+    .find({ id_usuario_invitado: req.body.id_usuario_invitado, estado: "CHECK" })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
@@ -189,7 +189,42 @@ app.post('/ws/comments', function (req, res) {
     });
 
 });
-
+//Foto usuario upload
+app.post('/ws/upload_photo_user', upload.single('picture'), function (req, res, next) {
+  var inputs = req.body;
+  const id = mongojs.ObjectId(inputs.id)
+  db.collection('users').findAndModify({
+    query: { _id: id },
+    update: {
+      $set: {
+        photo_url: "/uploads/" + req.file.originalname
+      }
+    }
+  }, function (err, user, lastErrorObject) {
+    // the update is complete 
+    if (err) res.json({ res: 'error', detail: err });
+    return res.json({ res: 'ok', user: user });
+  })
+})
+//Sign up Empresa
+app.post('/ws/signupEmpresa', upload.single('picture'), function (req, res, next) {
+  var inputs = req.body
+  var userData = {
+    name: inputs.name,
+    email: inputs.email,
+    username: inputs.username,
+    password: inputs.password,
+    photo_url: '/uploads/' + file.originalname,
+    es_empresa: 'SI',
+    direccion: inputs.direccion,
+    telefono: inputs.telefono,
+  }
+  db.collection('users').insert(userData, (err, user) => {
+    if (err)
+      return res.json({ res: 'error', detail: err });
+    return res.json({ res: 'ok', user: user });
+  })
+})
 
 
 
