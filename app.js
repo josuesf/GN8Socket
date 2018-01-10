@@ -117,6 +117,7 @@ app.post('/ws/posts/', function (req, res) {
     });
 })
 app.post('/ws/posts_user/', function (req, res) {
+  console.log(req.body)
   var posts = db.collection('posts')
     .find({ id_usuario: req.body.id_usuario })
     .skip(5 * (req.body.page - 1)).limit(5)
@@ -125,6 +126,29 @@ app.post('/ws/posts_user/', function (req, res) {
       // If there aren't any posts, then return.
       if (err) return res.json({ res: "error", detail: err });
       res.json({ res: "ok", posts });
+    });
+})
+app.post('/ws/listaEmpresas/', function (req, res) {
+  var posts = db.collection('users')
+    .find({ es_empresa: req.body.es_empresa })
+    .skip(8 * (req.body.page - 1)).limit(8)
+    //.sort({ createdAt: -1 })
+    .toArray((err, empresas) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", empresas });
+    });
+})
+app.post('/ws/buscarUsuarios/', function (req, res) {
+  var query=req.body.name
+  var posts = db.collection('users')
+    .find({ name: { $regex : query,$options:"i" }})
+    //.skip(8 * (req.body.page - 1)).limit(8)
+    //.sort({ createdAt: -1 })
+    .toArray((err, empresas) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", empresas });
     });
 })
 app.post('/ws/invitaciones_user/', function (req, res) {
@@ -202,8 +226,14 @@ app.post('/ws/upload_photo_user', upload.single('picture'), function (req, res, 
     }
   }, function (err, user, lastErrorObject) {
     // the update is complete 
-    if (err) res.json({ res: 'error', detail: err });
-    return res.json({ res: 'ok', user: user });
+    //Buscar la imagen anterior y actualizarla
+    db.collection('users').findOne({
+      _id: id
+    }, function (err, user) {
+      if (err) res.json({ res: 'error', detail: err });
+      return res.json({ res: 'ok', user: user });
+    })
+
   })
 })
 //Sign up Empresa
