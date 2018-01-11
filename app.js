@@ -120,7 +120,7 @@ app.post('/ws/posts_user/', function (req, res) {
   console.log(req.body)
   var posts = db.collection('posts')
     .find({ id_usuario: req.body.id_usuario })
-    .skip(5 * (req.body.page - 1)).limit(5)
+    .skip(3 * (req.body.page - 1)).limit(3)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
       // If there aren't any posts, then return.
@@ -178,6 +178,18 @@ app.post('/ws/getCodigo_Usuario/', function (req, res) {
     .find({
       id_post: req.body.id_post,
       id_usuario_invitado: req.body.id_usuario_invitado
+    })
+    .toArray((err, invitacion) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", invitacion });
+    });
+})
+app.post('/ws/VerificacionCodigo/', function (req, res) {
+  var posts = db.collection('invitaciones')
+    .find({
+      _id: mongojs.ObjectId(req.body.id_qr),
+      id_usuario:req.body.id_usuario
     })
     .toArray((err, invitacion) => {
       // If there aren't any posts, then return.
@@ -244,10 +256,13 @@ app.post('/ws/signupEmpresa', upload.single('picture'), function (req, res, next
     email: inputs.email,
     username: inputs.username,
     password: inputs.password,
-    photo_url: '/uploads/' + file.originalname,
+    photo_url: '/uploads/' + req.file.originalname,
     es_empresa: 'SI',
     direccion: inputs.direccion,
     telefono: inputs.telefono,
+    likes:0,
+    createdAt: new Date(),
+    updateAt: new Date()
   }
   db.collection('users').insert(userData, (err, user) => {
     if (err)
