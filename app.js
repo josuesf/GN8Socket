@@ -25,13 +25,13 @@ app.get('/', function (req, res) {
  * Creacion de un post
  * Paramentros : nombre_post,descripcion,id_usuario,likesCount,liked,codigoQR,createdAt,updateAt
  */
-/*var s3 = new aws.S3({
+var s3 = new aws.S3({
   accessKeyId: process.env.S3_KEY,
   secretAccessKey: process.env.S3_SECRET
 })
 var storage = multerS3({
   s3: s3,
-  bucket: 'gn8images',
+  bucket: 'gn8bucket',
   acl: 'public-read',
   metadata: function (req, file, cb) {
     cb(null, { fieldName: file.fieldname })
@@ -39,15 +39,15 @@ var storage = multerS3({
   key: function (req, file, cb) {
     cb(null, file.originalname)
   }
-})*/
-var storage = multer.diskStorage({
+})
+/*var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './uploads')
   },
   filename: function (req, file, cb) {
     cb(null, file.originalname)
   }
-})
+})*/
 var upload = multer({ storage: storage })
 
 app.post('/ws/create_post', upload.single('picture'), function (req, res, next) {
@@ -57,7 +57,7 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
   //   || !inputs.codigoQR ||
   //   !inputs.nombre_usuario || !inputs.photo_url)
   //   return res.json({ res: "error", detail: "Complete todos los campos" })
-  var photo_post = '/uploads/' + req.file.originalname;
+  var photo_post = 'https://s3-sa-east-1.amazonaws.com/gn8bucket/' + req.file.originalname;
   var post = {
     nombre_post: inputs.nombre_post,
     photo_post: photo_post,
@@ -233,7 +233,7 @@ app.post('/ws/upload_photo_user', upload.single('picture'), function (req, res, 
     query: { _id: id },
     update: {
       $set: {
-        photo_url: "/uploads/" + req.file.originalname
+        photo_url: "https://s3-sa-east-1.amazonaws.com/gn8bucket/" + req.file.originalname
       }
     }
   }, function (err, user, lastErrorObject) {
@@ -256,7 +256,7 @@ app.post('/ws/signupEmpresa', upload.single('picture'), function (req, res, next
     email: inputs.email,
     username: inputs.username,
     password: inputs.password,
-    photo_url: '/uploads/' + req.file.originalname,
+    photo_url: 'https://s3-sa-east-1.amazonaws.com/gn8bucket/' + req.file.originalname,
     es_empresa: 'SI',
     direccion: inputs.direccion,
     telefono: inputs.telefono,
