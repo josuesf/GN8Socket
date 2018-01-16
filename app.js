@@ -17,7 +17,7 @@ server.listen(port, () => console.log('listening on ' + port));
 var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-app.use('/uploads', express.static('uploads'));
+//app.use('/uploads', express.static('uploads'));
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
@@ -140,9 +140,9 @@ app.post('/ws/listaEmpresas/', function (req, res) {
     });
 })
 app.post('/ws/buscarUsuarios/', function (req, res) {
-  var query=req.body.name
+  var query = req.body.name
   var posts = db.collection('users')
-    .find({ name: { $regex : query,$options:"i" }})
+    .find({ name: { $regex: query, $options: "i" } })
     //.skip(8 * (req.body.page - 1)).limit(8)
     //.sort({ createdAt: -1 })
     .toArray((err, empresas) => {
@@ -189,7 +189,7 @@ app.post('/ws/VerificacionCodigo/', function (req, res) {
   var posts = db.collection('invitaciones')
     .find({
       _id: mongojs.ObjectId(req.body.id_qr),
-      id_usuario:req.body.id_usuario
+      id_usuario: req.body.id_usuario
     })
     .toArray((err, invitacion) => {
       // If there aren't any posts, then return.
@@ -260,7 +260,7 @@ app.post('/ws/signupEmpresa', upload.single('picture'), function (req, res, next
     es_empresa: 'SI',
     direccion: inputs.direccion,
     telefono: inputs.telefono,
-    likes:0,
+    likes: 0,
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -270,7 +270,15 @@ app.post('/ws/signupEmpresa', upload.single('picture'), function (req, res, next
     return res.json({ res: 'ok', user: user });
   })
 })
-
+app.post('/ws/recuperar_usuario/', function (req, res) {
+  const id = mongojs.ObjectId(req.body.id_usuario)
+  db.collection('users')
+    .findOne({ _id: id }, function (err, user) {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", user });
+    });
+})
 
 
 websocket.on('connection', (socket) => {
