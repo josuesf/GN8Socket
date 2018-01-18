@@ -70,6 +70,8 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
     commentsCount: 0,
     codigoqr: inputs.codigoqr == '1' ? true : false,
     codigoqr_des: inputs.codigoqr_des,
+    latitude:inputs.latitude,
+    longitude:inputs.longitude,
     createdAt: new Date(),
     updateAt: new Date()
   }
