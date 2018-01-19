@@ -62,7 +62,7 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
     nombre_post: inputs.nombre_post,
     photo_post: photo_post,
     descripcion: inputs.descripcion,
-    id_usuario: inputs.id_usuario,
+    id_usuario: mongojs.ObjectId(inputs.id_usuario),
     nombre_usuario: inputs.nombre_usuario,
     photo_url: inputs.photo_url,
     likesCount: 0,
@@ -70,8 +70,8 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
     commentsCount: 0,
     codigoqr: inputs.codigoqr == '1' ? true : false,
     codigoqr_des: inputs.codigoqr_des,
-    latitude:inputs.latitude,
-    longitude:inputs.longitude,
+    latitude: inputs.latitude,
+    longitude: inputs.longitude,
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -89,12 +89,12 @@ app.post('/ws/generarCodigoQR', function (req, res) {
   var inputs = req.body
 
   var invitacion = {
-    id_post: inputs.id_post,
-    id_usuario_invitado: inputs.id_usuario_invitado,
+    id_post: mongojs.ObjectId(inputs.id_post),
+    id_usuario_invitado: mongojs.ObjectId(inputs.id_usuario_invitado),
     nombre_post: inputs.nombre_post,
     photo_post: inputs.photo_post,
     codigoqr_des: inputs.codigoqr_des,
-    id_usuario: inputs.id_usuario,
+    id_usuario: mongojs.ObjectId(inputs.id_usuario),
     nombre_usuario: inputs.nombre_usuario,
     photo_url: inputs.photo_url,
     estado: "WAIT",
@@ -118,8 +118,20 @@ app.post('/ws/posts/', function (req, res) {
       res.json({ res: "ok", posts });
     });
 })
+app.post('/ws/posts_guardados/', function (req, res) {
+  const campo = "saved." + req.body.id_usuario
+  console.log(campo)
+  var posts = db.collection('posts')
+    .find({ [campo]: true })
+    .skip(10 * (req.body.page - 1)).limit(10)
+    .sort({ createdAt: -1 })
+    .toArray((err, posts) => {
+      // If there aren't any posts, then return.
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", posts });
+    });
+})
 app.post('/ws/posts_user/', function (req, res) {
-  console.log(req.body)
   var posts = db.collection('posts')
     .find({ id_usuario: req.body.id_usuario })
     .skip(3 * (req.body.page - 1)).limit(3)
@@ -155,7 +167,7 @@ app.post('/ws/buscarUsuarios/', function (req, res) {
 })
 app.post('/ws/invitaciones_user/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({ id_usuario_invitado: req.body.id_usuario_invitado, estado: "WAIT" })
+    .find({ id_usuario_invitado: mongojs.ObjectId(req.body.id_usuario_invitado), estado: "WAIT" })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
@@ -166,7 +178,8 @@ app.post('/ws/invitaciones_user/', function (req, res) {
 })
 app.post('/ws/invitaciones_user_check/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({ id_usuario_invitado: req.body.id_usuario_invitado, estado: "CHECK" })
+    .find({ id_usuario_invitado: mongojs.ObjectId(req.body.id_usuario_invitado), 
+      estado: "CHECK" })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
@@ -178,8 +191,8 @@ app.post('/ws/invitaciones_user_check/', function (req, res) {
 app.post('/ws/getCodigo_Usuario/', function (req, res) {
   var posts = db.collection('invitaciones')
     .find({
-      id_post: req.body.id_post,
-      id_usuario_invitado: req.body.id_usuario_invitado
+      id_post: mongojs.ObjectId(req.body.id_post),
+      id_usuario_invitado: mongojs.ObjectId(req.body.id_usuario_invitado)
     })
     .toArray((err, invitacion) => {
       // If there aren't any posts, then return.
@@ -189,13 +202,21 @@ app.post('/ws/getCodigo_Usuario/', function (req, res) {
 })
 app.post('/ws/VerificacionCodigo/', function (req, res) {
   var posts = db.collection('invitaciones')
-    .find({
-      _id: mongojs.ObjectId(req.body.id_qr),
-      id_usuario: req.body.id_usuario
-    })
-    .toArray((err, invitacion) => {
+    .findAndModify({
+      query: {
+        _id: mongojs.ObjectId(req.body.id_qr),
+        id_usuario: mongojs.ObjectId(req.body.id_usuario),
+        estado:'WAIT'
+      },
+      update: {
+        $set: {
+          estado: "CHECK" 
+        }
+      },
+      new:true
+    },(err, invitacion) => {
       // If there aren't any posts, then return.
-      if (err) return res.json({ res: "error", detail: err });
+      if (err || !invitacion) return res.json({ res: "error", detail: err });
       res.json({ res: "ok", invitacion });
     });
 })
@@ -214,7 +235,6 @@ app.post('/ws/like_post/', function (req, res) {
  * Comentarios de un post
  */
 app.post('/ws/comments', function (req, res) {
-  console.log(req.body.page)
   var messages = db.collection('message')
     .find({ id_post: req.body.id_post })
     .sort({ createdAt: -1 })
@@ -282,6 +302,45 @@ app.post('/ws/recuperar_usuario/', function (req, res) {
     });
 })
 
+//Guardar Post
+app.post('/ws/guardar_post/', function (req, res) {
+  const post_guardado = {
+    id_usuario: mongojs.ObjectId(req.body.id_usuario),
+    id_post: mongojs.ObjectId(req.body.id_post),
+    save: req.body.save,
+    createdAt: new Date(),
+    updateAt: new Date()
+  }
+
+  const campo = "saved." + req.body.id_usuario
+  db.collection('posts_guardados').findAndModify({
+    query: {
+      id_usuario: mongojs.ObjectId(req.body.id_usuario),
+      id_post: mongojs.ObjectId(req.body.id_post),
+    },
+    update: {
+      $set: {
+        id_usuario: mongojs.ObjectId(req.body.id_usuario),
+        id_post: mongojs.ObjectId(req.body.id_post),
+        save: req.body.save,
+        createdAt: new Date(),
+        updateAt: new Date()
+      }
+    },
+    upsert: true
+  }, (err, post_inserted) => {
+    if (err) return res.json({ res: 'error', detail: err });
+    db.collection('posts').update(
+      { _id: mongojs.ObjectId(req.body.id_post) }, {
+        $set: { [campo]: req.body.save },
+      }, (err, post) => {
+        // the update is complete 
+        if (err) return res.json({ res: 'error', detail: err });
+        return res.json({ res: 'ok', post: post_inserted });
+      })
+  })
+})
+
 
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
@@ -299,14 +358,13 @@ function _sendAndSaveMessage(message, socket, fromServer) {
     text: message.text,
     user: message.user,
     photo_url: message.photo_url,
-    id_post: message.id_post,
-    id_user: message.id_user,
+    id_post: mongojs.ObjectId(message.id_post),
+    id_user: mongojs.ObjectId(message.id_user),
     createdAt: new Date(),
     updateAt: new Date()
   };
 
   db.collection('message').insert(messageData, (err, message) => {
-    console.log(message.id_post)
     const id = mongojs.ObjectId(message.id_post)
     db.collection('posts').update(
       { _id: id }, { $inc: { commentsCount: 1 } }, function (err, post) {
