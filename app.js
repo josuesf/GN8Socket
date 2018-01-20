@@ -72,6 +72,7 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
     codigoqr_des: inputs.codigoqr_des,
     latitude: inputs.latitude,
     longitude: inputs.longitude,
+    categorias: inputs.categorias,
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -108,8 +109,9 @@ app.post('/ws/generarCodigoQR', function (req, res) {
   });
 });
 app.post('/ws/posts/', function (req, res) {
+  var query = req.body.categoria
   var posts = db.collection('posts')
-    .find({})
+    .find({categorias: { $regex: query, $options: "i" }})
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
@@ -133,7 +135,7 @@ app.post('/ws/posts_guardados/', function (req, res) {
 })
 app.post('/ws/posts_user/', function (req, res) {
   var posts = db.collection('posts')
-    .find({ id_usuario: req.body.id_usuario })
+    .find({ id_usuario: mongojs.ObjectId(req.body.id_usuario) })
     .skip(3 * (req.body.page - 1)).limit(3)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
@@ -236,7 +238,7 @@ app.post('/ws/like_post/', function (req, res) {
  */
 app.post('/ws/comments', function (req, res) {
   var messages = db.collection('message')
-    .find({ id_post: req.body.id_post })
+    .find({ id_post: mongojs.ObjectId(req.body.id_post) })
     .sort({ createdAt: -1 })
     .skip(25 * (req.body.page - 1)).limit(25)
     .toArray((err, messages) => {
