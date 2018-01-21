@@ -111,7 +111,7 @@ app.post('/ws/generarCodigoQR', function (req, res) {
 app.post('/ws/posts/', function (req, res) {
   var query = req.body.categoria
   var posts = db.collection('posts')
-    .find({categorias: { $regex: query, $options: "i" }})
+    .find({ categorias: { $regex: query, $options: "i" } })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
@@ -180,8 +180,10 @@ app.post('/ws/invitaciones_user/', function (req, res) {
 })
 app.post('/ws/invitaciones_user_check/', function (req, res) {
   var invitaciones = db.collection('invitaciones')
-    .find({ id_usuario_invitado: mongojs.ObjectId(req.body.id_usuario_invitado), 
-      estado: "CHECK" })
+    .find({
+      id_usuario_invitado: mongojs.ObjectId(req.body.id_usuario_invitado),
+      estado: "CHECK"
+    })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, invitaciones) => {
@@ -208,15 +210,15 @@ app.post('/ws/VerificacionCodigo/', function (req, res) {
       query: {
         _id: mongojs.ObjectId(req.body.id_qr),
         id_usuario: mongojs.ObjectId(req.body.id_usuario),
-        estado:'WAIT'
+        estado: 'WAIT'
       },
       update: {
         $set: {
-          estado: "CHECK" 
+          estado: "CHECK"
         }
       },
-      new:true
-    },(err, invitacion) => {
+      new: true
+    }, (err, invitacion) => {
       // If there aren't any posts, then return.
       if (err || !invitacion) return res.json({ res: "error", detail: err });
       res.json({ res: "ok", invitacion });
@@ -343,6 +345,50 @@ app.post('/ws/guardar_post/', function (req, res) {
   })
 })
 
+app.post('/ws/signup/', function (req, res) {
+  var inputs = req.body
+  const user_data = {
+    name: inputs.name,
+    email: inputs.email,
+    username: inputs.username,
+    // TODO: But encrypt the password first
+    password: inputs.password,
+    photo_url: inputs.photo_url,
+    es_empresa: inputs.es_empresa,
+    direccion: inputs.direccion,
+    telefono: inputs.telefono,
+    likes: 0
+  }
+  db.collection('users').insert(user_data, function (err, user) {
+    if (err)
+      return res.json({ res: 'error', detail: err });
+    return res.json({ res: 'ok', user: user });
+  })
+})
+
+app.post('/ws/isuser', function (req, res) {
+  var inputs = req.body
+
+  db.collection('users').findOne(
+    { email: inputs.email }, function (err, user) {
+      if (err || user == null)
+        return res.json({ res: 'error', detail: err });
+      return res.json({ res: 'ok', user: user });
+    })
+})
+
+app.post('/ws/signin', function (req, res) {
+  db.collection('users').findOne(
+    {
+      email: req.body.email,
+      password: req.body.password
+    },
+    function (err, user) {
+      if (err || user == null)
+        return res.json({ res: 'error', detail: err });
+      return res.json({ res: 'ok', user: user });
+    })
+})
 
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
