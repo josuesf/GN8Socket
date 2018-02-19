@@ -52,7 +52,7 @@ var upload = multer({ storage: storage })
 
 app.post('/ws/create_post', upload.single('picture'), function (req, res, next) {
   var inputs = req.body;
-
+  console.log(inputs)
   // if (!inputs.nombre_post || !inputs.descripcion || !inputs.id_usuario
   //   || !inputs.codigoQR ||
   //   !inputs.nombre_usuario || !inputs.photo_url)
@@ -72,7 +72,10 @@ app.post('/ws/create_post', upload.single('picture'), function (req, res, next) 
     codigoqr_des: inputs.codigoqr_des,
     latitude: inputs.latitude,
     longitude: inputs.longitude,
+    geo: [parseFloat(inputs.longitude), parseFloat(inputs.latitude)],
     categorias: inputs.categorias,
+    fecha_evento: new Date(inputs.fecha_evento),
+    limite_codigos: parseInt(inputs.limite_codigos),
     createdAt: new Date(),
     updateAt: new Date()
   }
@@ -97,6 +100,7 @@ app.post('/ws/generarCodigoQR', function (req, res) {
     codigoqr_des: inputs.codigoqr_des,
     id_usuario: mongojs.ObjectId(inputs.id_usuario),
     nombre_usuario: inputs.nombre_usuario,
+    nombre_usuario_invitado: inputs.nombre_usuario_invitado,
     photo_url: inputs.photo_url,
     estado: "WAIT",
     createdAt: new Date(),
@@ -105,7 +109,13 @@ app.post('/ws/generarCodigoQR', function (req, res) {
 
   db.collection('invitaciones').insert(invitacion, (err, invitacion) => {
     if (err) return res.json({ res: "error", detail: err })
-    return res.json({ res: "ok", invitacion })
+    db.collection('posts').update(
+      { _id:  mongojs.ObjectId(inputs.id_post) }, { $inc: { limite_codigos: -1 } }, (err, post) =>{
+        if (err) return res.json({ res: "error", detail: err })
+        // the update is complete 
+        return res.json({ res: "ok", invitacion })
+      })
+    
   });
 });
 app.post('/ws/posts/', function (req, res) {
@@ -233,6 +243,19 @@ app.post('/ws/like_post/', function (req, res) {
       // If there aren't any posts, then return.
       if (err) return res.json({ res: "error", detail: err });
       res.json({ res: "ok", likes });
+    });
+})
+app.post('/ws/codigos_generados_post/', function (req, res) {
+  const id = mongojs.ObjectId(req.body.id_post)
+  
+  var posts = db.collection('invitaciones')
+    .find({ id_post: id })
+    //.limit(20)
+    .toArray((err, invitaciones) => {
+      // If there aren't any posts, then return.
+      console.log(invitaciones)
+      if (err) return res.json({ res: "error", detail: err });
+      res.json({ res: "ok", invitaciones });
     });
 })
 /**
@@ -390,6 +413,40 @@ app.post('/ws/signin', function (req, res) {
     })
 })
 
+//Buscar latitudes y longitudes de las publicaciones como markers
+app.post('/ws/get_lat_lon_posts', function (req, res) {
+  var distance = 1000 / 6371;
+  const lat = parseFloat(req.body.lat)
+  const lng = parseFloat(req.body.lng)
+
+  console.log(req.body)
+  db.collection('posts').find({
+    geo: {
+      $geoWithin: {
+        $centerSphere: [[lng, lat],
+        100 / 3963.2]
+      }
+    }
+  }, {
+      _id: 1, nombre_post: 1, latitude: 1, longitude: 1, photo_post: 1, photo_url: 1
+    }).toArray((err, markers) => {
+
+      if (err)
+        return res.json({ res: 'error', detail: err });
+      return res.json({ res: 'ok', markers });
+    })
+})
+app.post('/ws/post_get', function (req, res) {
+  var inputs = req.body
+
+  db.collection('posts').findOne(
+    { _id: mongojs.ObjectId(inputs._id) }, function (err, post) {
+      if (err || post == null)
+        return res.json({ res: 'error', detail: err });
+      return res.json({ res: 'ok', post });
+    })
+})
+
 websocket.on('connection', (socket) => {
   socket.on('message', (message) => _sendAndSaveMessage(message, socket));
   socket.on('like_post', (like) => _guardarLikePost(like, socket))
@@ -437,21 +494,21 @@ function _guardarLikePost(like, socket) {
 
         db.collection('likes_posts')
           .update({ id_post: like.id_post, id_user: like.id_user },
-          { $set: { like: like.like } },
-          function (err, res) {
-            if (err) console.log(err)
-            db.collection('posts').update(
-              { _id: id },
-              {
-                $set: { [campo]: like.like },
-                $inc: { likesCount: like.like ? 1 : -1 }
-              }, function (err, res) {
-                // the update is complete 
-                if (err) console.log(err)
-                // If the message is from the server, then send to everyone.
-                websocket.emit('like_post', like);
-              })
-          })
+            { $set: { like: like.like } },
+            function (err, res) {
+              if (err) console.log(err)
+              db.collection('posts').update(
+                { _id: id },
+                {
+                  $set: { [campo]: like.like },
+                  $inc: { likesCount: like.like ? 1 : -1 }
+                }, function (err, res) {
+                  // the update is complete 
+                  if (err) console.log(err)
+                  // If the message is from the server, then send to everyone.
+                  websocket.emit('like_post', like);
+                })
+            })
       } else {
         //Insert new like
         db.collection('likes_posts').insert(like, (err, liked) => {
