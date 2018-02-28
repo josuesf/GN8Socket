@@ -1,4 +1,5 @@
 var express = require('express');
+var session = require('express-session')
 var http = require('http')
 var socketio = require('socket.io');
 var mongojs = require('mongojs');
