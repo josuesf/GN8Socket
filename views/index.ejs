@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="description" content="">
+
+    <meta name="author" content="">
+
+    <link rel="icon" href="img/favicon.png">
+
+    <title>GN8</title>
+
+    <!-- Bootstrap core CSS -->
+
+    <link href="/assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="/assets/css/animate.min.css" rel="stylesheet">
+
+    <link href="/assets/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/assets/css/timeline.css" rel="stylesheet">
+
+    <script src="/assets/js/jquery.1.11.1.min.js"></script>
+
+    <script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="/assets/js/custom.js"></script>
+
+
+  </head>
+
+  <body class="welcome-page animated fadeIn">
+
+    <div class="row-welcome" style="background-image: url('/assets/img/Post/home-bg.jpg');">
+
+      <div class="row-body">
+
+        <div class="welcome-inner"> 
+
+          <div class="welcome-message welcome-text-shadow">
+
+            <div class="welcome-title">
+
+              GN8
+
+            </div>
+
+            <div class="welcome-desc">
+
+              Bienvenido a la red social de todos los eventos
+
+            </div>
+
+            <div class="welcome-about">
+
+              GN8 reserva la asistencia tus eventos, interactua con los asistentes de ese evento, publica y muchas otras cosas mas...
+
+            </div>                        
+
+          </div> 
+
+          <div class="welcome-inputs">
+
+            <div class="widget panel-inputs panel-home animated fadeInUp">
+
+              <div class="widget-header">
+
+                <h3 class="widget-caption">
+
+                  <span class="pull-right">
+
+                    <a href="#" class="btn btn-danger btn-xs btn-panel-home">Registrarse</a>
+
+                  </span>
+
+                </h3>
+
+              </div>
+
+              <div class="widget-body">
+                  <form action="/login" method="POST" autocomplete="off" >
+                  	<div class="form-group">
+                    	<input type="text" id="short" class="form-control" name="usuario" placeholder="Ingrese su usuario" required>
+                    </div>
+                    <div class="form-group">
+                    	<input type="password"  class="form-control" id="short" name="password" placeholder="Ingrese su contraseña" required> 
+                    </div>
+                    <button type="submit" name="login" class="btn btn-danger"><i class="fa fa-check"></i> Iniciar Sesión</button>
+
+                  </form>  
+              </div>
+
+            </div>
+
+
+
+            <div class="widget panel-danger panel-inputs panel-home  hidden">
+
+              <div class="widget-header">
+
+                <h3 class="widget-caption">
+
+                  <span class="pull-right">
+
+                    <a href="#" class="btn btn-danger btn-xs btn-panel-home"> Iniciar Sesión</a>
+
+                  </span>
+
+                </h3>
+
+              </div>
+
+              <div class="widget-body">
+
+                  <form action="/registrarUsuario" method="POST" autocomplete="off">
+
+                  	<div class="form-group">
+                    	<input type="text" id="short" class="form-control" name="nombreR" placeholder="Ingrese el nombre" required>
+                    </div>
+
+                  	<div class="form-group">
+                    	<input type="text" id="short" class="form-control" name="usuarioR" placeholder="Ingrese el usuario" required>
+                    </div>
+
+                    <div class="form-group">
+                    	<input type="password" id="short" class="form-control" name="passwordR" placeholder="Ingrese la contraseña" required>
+                    </div>
+
+                    <div class="form-group">
+                    	<input type="email" id="short" name="emailR" class="form-control" placeholder="Ingrese el correo electrónico" required>
+                    </div>
+
+                    <div class="checkbox">
+                      <input id="chbEmpresa" type="checkbox" name="chbEmpresa" >
+                      <label for="chbEmpresa">Soy una empresa</label>
+                    </div> 
+          					<p></p>
+          					<div class="form-group">  
+	                    <button type="submit" name="register" class="btn btn-danger">
+	                      <i class="fa fa-user-plus"></i>
+	                      Registrar
+	                    </button>
+	                 </div>
+
+                  </form> 
+
+              </div>
+
+            </div>
+
+          </div> 
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="welcome-full animated fadeInLeft">
+       
+      <div class="row-body">
+ 
+      <div><h4>Eventos más populares para hoy</h4></div>
+
+        <div class="welcome-users-inner">
+
+        <% for(var i=0;i<publicaciones.length;i++) { %>
+          <div class="welcome-user">
+
+            <a href="#">
+
+            <% if(publicaciones[i].photo_post=="") { %>
+                  <img src="/assets/img/event.jpg" class="img-circle">
+            <% }else{ %>
+                  <img src='<%= publicaciones[i].photo_post %>' class="img-circle">
+            <% } %>
+ 
+            </a>
+
+          </div>
+        <% } %>
+        </div> 
+
+      </div>
+
+    </div>
+
+   
+
+  </body>
+ </html>
+

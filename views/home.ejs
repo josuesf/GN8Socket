@@ -1,0 +1,446 @@
+<% var title = 'GN8' %>
+<% include head %>
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false&amp;libraries=places"></script>
+<script src="/assets/js/jquery.geocomplete.js"></script> 
+
+    <div class="col-md-10 no-paddin-xs">
+
+			<div class="row">
+
+			<!-- left content-->
+
+			  <div class="profile-nav col-md-4">
+
+				<div class="panel">
+
+				  <div class="user-heading round">
+
+				      <a href="#">
+
+				          <img src='<%= imagen %>' alt="">
+
+				      </a>
+
+				      <h1><%= nombre %></h1>
+
+				  </div>
+
+				</div>
+ 				
+ 				<% if (tipo!="SI") { %>
+
+				<div class="widget">
+
+				  <div class="widget-header">
+
+				    <h3 class="widget-caption">Codigos QR</h3>
+
+				  </div>
+
+				  <div class="widget-body bordered-top bordered-darkorange">
+
+				  	<div class="card">
+
+					  	<div class="content">
+
+					  		 <ul class="list-unstyled team-members">
+
+				                <li>
+
+				                    <div class="row">
+				                        <div class="col-xs-12">
+											<b><a href="/invitaciones"><%= invitacionesPendientes %> Codigos QR pendientes </a></b>  
+				                        </div>
+				                    </div>
+
+				                     <div class="row">
+				                        <div class="col-xs-12">
+											<b><a href="/invitaciones"><%= invitacionesUsadas %> Codigos QR usados </a></b> 
+				                        </div>
+				                    </div>
+				                </li>
+				               
+				            </ul>					
+
+					  	</div>
+
+				  	</div>
+
+				  </div>
+
+    			</div> 
+
+    			<div class="widget">
+
+				  <div class="widget-header">
+
+				    <h3 class="widget-caption">Publicaciones guardadas recientes</h3>
+
+				  </div>
+
+				  <div class="widget-body bordered-top bordered-darkorange">
+
+				  	<div class="card">
+
+					  	<div class="content">
+
+					  		<ul class="list-unstyled team-members ">
+					  			<% for(var i=0;i<publicaciones_guardadas.length;i++) { %>
+ 								<li>
+
+				                    <div class="row">
+
+				                        <div class="col-xs-3">
+
+				                            <div class="avatar">
+
+				                            <% if(publicaciones_guardadas[i].photo_post==""){%>
+
+				                            	<img class="notifications" src="/assets/img/event.jpg" alt="img" lass="img-circle img-no-padding img-responsive">
+				                            <%}else{%>
+				                            	<img class="notifications" src='<%= publicaciones_guardadas[i].photo_post %>' alt="img" lass="img-circle img-no-padding img-responsive">
+				                            <%}%>
+				                            </div>
+
+				                        </div>
+
+				                        <div class="col-xs-9">
+											<b><a href="#"><%= publicaciones_guardadas[i].nombre_post %></a></b> publicado por 
+
+											<b><a href="#"><%= publicaciones_guardadas[i].nombre_usuario %></a></b>. 
+ 
+				                        </div>
+
+				                    </div>
+
+				                </li>				               
+				            	<% } %>
+				            </ul>					
+
+					  	</div>
+
+				  	</div>
+
+				  </div>
+
+    			</div>
+			 								 			      
+    			<% } %>
+
+    			<% if (tipo=="SI") { %>
+    			 <ul class="nav nav-pills nav-stacked">
+
+				      <li><a href="#"> <i class="fa fa-info-circle"></i> Eventos</a></li>
+
+				      <li><a href="#"> <i class="fa fa-qrcode"></i> Codigos QR</a></li> 
+
+				      <li><a href="#"> <i class="fa fa-edit"></i> Editar perfil</a></li>
+				                     
+				  </ul>
+				<% } %>
+			  </div> 
+
+
+			<div class="modal fade" id="modalQR">
+			  <div class="modal-dialog" role="document">
+			    <div class="modal-content">
+			      <div class="modal-header">
+			        <h5 class="modal-title">Código QR</h5>
+			        
+			      </div>
+			      <div class="modal-body text-center">
+			      	<div class="row">
+				      	<div class="col-md-12" id="qrcode"> 
+				      	</div>
+				    </div>
+			         <form method="post" action="/generarCodigoQR" id="formQR">
+			         	<input type="text" class="hidden id_post_qr" name="id_post">
+			         	<input type="text" class="hidden id_usuario_invitado_qr" name="id_usuario_invitado">
+			         	<input type="text" class="hidden nombre_post_qr" name="nombre_post">
+			         	<input type="text" class="hidden photo_post_qr" name="photo_post">
+			         	<input type="text" class="hidden codigoqr_des_qr" name="codigoqr_des">
+			         	<input type="text" class="hidden nombre_usuario_qr" name="nombre_usuario">
+			         	<input type="text" class="hidden photo_url_qr" name="photo_url">
+			         </form>
+			      </div>
+			      <div class="modal-footer">
+			        <button type="button" class="btn btn-primary btnGuardarQR"><i class="fa fa-qrcode icon"></i> Guardar Codigo</button> 
+			        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button> 
+			      </div>
+			    </div>
+			  </div>
+			</div>
+
+
+
+			  <div class="profile-info col-md-8  animated fadeInUp">
+
+
+				<% if (tipo=="SI") { %> 
+					  <a class="btn btn-primary" data-toggle="collapse" href="#collapseEvent" aria-expanded="false" aria-controls="collapseEvent">
+					    Publicar Evento
+					  </a>
+					   
+					</p>
+					<div class="collapse" id="collapseEvent">
+					  <div class="card card-block card-padding">
+					    <div class="row">
+					    <div class="col-md-12">
+					  	<form action="/crearEvento" method="post" id="formPrincipal">
+					  	 	<input class="hidden" name="id_usuario" value='<%= id %>'>
+					  	 	<input class="hidden" name="nombre_usuario" value='<%= nombre %>'>
+
+		                  	<div class="form-group">
+		                    	<input type="text" id="short" class="form-control" name="nombre_post" placeholder="Ingrese el nombre del evento" required>
+		                    </div>
+
+		                    <div class="form-group">
+			                    <textarea placeholder="Ingrese una descripción" rows="2" class="form-control input-md" name="descripcion_post"></textarea>
+		                    </div>
+
+		                    <div class="checkbox">
+							  <input id="codigoqr" type="checkbox" name="codigoqr" >
+							  <label for="codigoqr">Habilitar codigos QR</label>
+							</div>
+							<p></p>
+							<div class="form-group" id="divDescripcionQR"  style="display: none">
+			                    <textarea placeholder="Ingrese una descripción para el codigo QR" rows="2" class="form-control input-md" name="codigoqr_des"></textarea>
+		                    </div>
+						    <p></p>
+
+ 							<div class="form-group">
+ 								<form>
+								    <input id="geocomplete" type="text" class="form-control" placeholder="Ingrese su dirección"/>
+								    <div class="details hidden">  
+							          <input name="lat" type="text" value=""> 
+							          <input name="lng" type="text" value="">
+								    </div>
+							    </form> 
+						    </div>
+						    <p></p>
+						    <div class="map_canvas" style="height:150px"></div>
+							<p></p>
+		  					<div class="form-group">  
+			                    <button type="button" name="register" id="btnRegister" class="btn btn-danger">
+			                      Registrar
+			                    </button>
+			                </div>
+			            </form>
+			                <script>
+						      $(function(){
+						        var center = new google.maps.LatLng(-33.873651,151.20689),
+						          defaultBounds = new google.maps.LatLngBounds(
+						          new google.maps.LatLng(-33.8902, 151.1759),
+						          new google.maps.LatLng(-33.8474, 151.2631)
+						        );
+
+						        $("#geocomplete").geocomplete({
+						          map: ".map_canvas",
+						          details: ".details",
+						          types: ['establishment'],
+						          bounds: defaultBounds
+						        });
+
+						        var map =  $("#geocomplete").geocomplete("map")
+
+						        map.setCenter(center);
+						        map.setZoom(11);
+
+						        $("#codigoqr").change(function(){ 
+						        	$("#divDescripcionQR").toggle( "slow" ); 
+						        });
+
+						        $("#btnRegister").click(function(){
+						        	$("#formPrincipal").submit();
+						        });
+
+						      });
+						    </script>
+
+		                </div>
+		                </div>
+					  </div>
+					</div>
+
+				<% }
+				 	else { %>
+				<div class="panel hidden">
+				  <form>
+
+				    <textarea placeholder="¿Que estas pensando?" rows="2" class="form-control input-lg p-text-area"></textarea>
+
+				  </form>
+
+				  <div class="panel-footer">
+
+				      <button class="btn btn-primary pull-right">Publicar</button>
+
+				      <ul class="nav nav-pills">
+
+				          <li>
+
+				              <a href="#"><i class="fa fa-map-marker"></i></a>
+
+				          </li>
+
+				          <li>
+
+				              <a href="#"><i class="fa fa-camera"></i></a>
+
+				          </li>
+
+				          <li>
+
+				              <a href="#"><i class=" fa fa-film"></i></a>
+
+				          </li>
+
+				          <li>
+
+				              <a href="#"><i class="fa fa-microphone"></i></a>
+
+				          </li>
+
+				      </ul>
+
+				  </div>
+				</div>
+				<% } %>
+
+				<% for(var i=0;i<publicaciones.length;i++) { %>
+
+					<div class="panel panel-white post panel-shadow" id='<%= publicaciones[i]._id %>'>
+
+					  <div class="post-heading">
+					  	<input class="hidden" value='<%= publicaciones[i]._id %>' id="id_post">
+					      <div class="pull-left image">
+					      	<% if(publicaciones[i].photo_url=="") { %>
+					          	<img src="/assets/img/profile.jpg" class="avatar" alt="user profile image">
+					        <% }else{ %>
+					        	<img src='<%= publicaciones[i].photo_url %>' class="avatar" alt="user profile image">
+					        <% } %>
+					      </div>
+
+					      <div class="pull-left meta">
+
+					          <div class="title h5">
+
+					              <a href="#" class="post-user-name"><%= publicaciones[i].nombre_post %></a>
+
+					              subido por <%= publicaciones[i].nombre_usuario %>
+
+					          </div>
+
+					          <h6 class="text-muted time">
+					          
+					          </h6>
+
+					      </div>
+
+					      <div class="pull-right">
+					       		<form id="formGuardarPublicacion" method="post" action="/guardarPublicacion">
+						      		
+						      		<input type="text" class="hidden" name="id_post" value='<%= publicaciones[i]._id %>'>
+						         	<input type="text" class="hidden" name="id_usuario" value='<%= id %>'>
+						         	<input type="text" class="hidden" name="nombre_post" value='<%= publicaciones[i].nombre_post %>'>
+						         	<input type="text" class="hidden" name="photo_post" value='<%= publicaciones[i].photo_post  %>'> 
+						         	<input type="text" class="hidden" name="nombre_usuario" value='<%= publicaciones[i].nombre_usuario %> %>'>  
+
+						      		<li class="dropdown" style="list-style-type: none;"> 
+
+					                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">  <i class="fa fa-ellipsis-v fa-1x"></i>
+					                  </a>
+
+					                  <ul class="dropdown-menu dropdown-menu-right"> 
+
+					                    <li><a href="javascript:void(0);" class="btnGuardarPublicacion">Guardar publicación</a></li>
+					                  </ul>
+						            </li>
+						        </form> 
+					      </div>
+
+					  </div>
+
+					  <div class="post-image">
+					  	<% if(publicaciones[i].photo_post=="") { %>
+				          	<img src="/assets/img/event.jpg" class="image show-in-modal" alt="image post">
+				        <% }else{ %>
+				        	<img src='<%= publicaciones[i].photo_post %>' class="image show-in-modal" alt="image post">
+				        <% } %>
+					  </div>
+
+					  <div class="post-description" data-value='<%= publicaciones[i]._id %>'>
+
+
+					      <p><%=  
+					      		publicaciones[i].descripcion %>
+					      </p>
+
+					      <div class="stats">
+
+					      	<% if (publicaciones[i].liked[id]=="1") { %> 
+					          <a class="btn stat-item btnLike" data-value="1" style="color:#5272ea">
+
+					              <i class="fa fa-thumbs-up icon"></i><%= publicaciones[i].likesCount %>
+
+					          </a>
+					        <% }else{ %> 
+
+					        	<a class="btn stat-item btnLike" data-value="0" style="color:#828282">
+
+					              <i class="fa fa-thumbs-up icon"></i><%= publicaciones[i].likesCount %>
+
+					          	</a>
+
+					        <% } %> 
+
+					          <a class="btn stat-item">
+
+					              <i class="fa fa-comments-o icon"></i><%= publicaciones[i].commentsCount %>
+
+					          </a>
+
+					          <% if (tipo!="SI") { %> 
+					          <a class="btn stat-item btnQr" data-id='<%= publicaciones[i]._id %>' data-value='<%= publicaciones[i].codigoqr_des %>' data-toggle="modal" data-target="#modalQR">
+
+					              <i class="fa fa-qrcode icon"></i>
+
+					          </a>
+					          <% } %> 
+
+					      </div>
+
+					  </div>
+
+					  <div class="post-footer">
+
+					      <input class="form-control add-comment-input" placeholder="Escribe un comentario..." type="text">
+
+					      <ul class="comments-list">
+
+					      </ul>
+
+					  </div>
+
+				</div>
+
+				<% } %> 
+
+				<div class="panel panel-white post-load-more panel-shadow text-center">
+
+					<button class="btn btn-danger">
+
+						<i class="fa fa-refresh"></i> Leer más...
+
+					</button>
+
+				</div>			      
+
+			  </div><!--end right  content-->
+
+			</div>
+    </div>
+
+ 
+
+<% include foot %>

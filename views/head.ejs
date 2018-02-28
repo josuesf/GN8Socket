@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    
+    <meta charset="utf-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="description" content="">
+
+    <meta name="author" content="">
+
+    <link rel="icon" href="img/favicon.png">
+
+    <link href="/assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="/assets/css/animate.min.css" rel="stylesheet">
+
+    <link href="/assets/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/assets/css/timeline.css" rel="stylesheet">
+
+    <link href="/assets/css/sweetalert2.min.css" rel="stylesheet">
+
+    <script src="/assets/js/jquery.1.11.1.min.js"></script>
+
+    <script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="/assets/js/custom.js"></script>
+
+    <script src="/assets/socket.io/socket.io.js"></script>
+
+    <script src="/assets/js/jquery.qrcode.min.js"></script>
+
+    <script src="assets/js/jquery.form.min.js"></script>
+
+    <script src="assets/js/sweetalert2.min.js"></script>
+
+  </head>
+<body class="animated fadeIn">
+
+    <nav class="navbar navbar-default navbar-fixed-top navbar-principal">
+
+      <div class="container">
+
+        <div class="navbar-header">
+
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+
+            <span class="sr-only">Toggle navigation</span>
+
+            <span class="icon-bar"></span>
+
+            <span class="icon-bar"></span>
+
+            <span class="icon-bar"></span>
+
+          </button>
+
+          <a class="navbar-brand" href="index-2.html">
+
+            <b><%= title %></b>
+
+          </a>
+
+        </div>
+
+        <div id="navbar" class="collapse navbar-collapse">
+
+            <div class="col-md-5 col-sm-4">         
+
+             <form class="navbar-form">
+
+                <div class="form-group" style="display:inline;">
+
+                  <div class="input-group" style="display:table;">
+
+                    <input class="form-control" name="search" placeholder="Buscar..." autocomplete="off" type="text">
+
+                    <span class="input-group-addon" style="width:1%;">
+
+                      <span class="glyphicon glyphicon-search"></span>
+
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </form>
+
+            </div>        
+
+          <ul class="nav navbar-nav navbar-right">
+
+              <li>
+
+                <a href="/home">
+
+                  <%= nombre %>
+
+                  <img src='<%= imagen %>' class="img-nav">
+
+                </a>
+
+              </li>
+
+              <li class="active"><a href="/home"><i class="fa fa-bars"></i> Inicio</a></li>
+
+              <li><a href="#"><i class="fa fa-comments"></i></a></li>
+
+              <% if (tipo=="SI") { %>
+              <li class="dropdown">
+
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">  Configuraciones 
+
+                    <span class="caret"></span>
+
+                  </a>
+
+                  <ul class="dropdown-menu"> 
+                    <li><a href="cover_profile.html">Cover profile</a></li>
+                  </ul>
+
+              </li>
+              <% } %>
+              <li><a href="#" class="nav-controller"><i class="fa fa-user"></i></a></li>
+              <li class="dropdown"> 
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">  <i class="fa fa-cog"></i>
+                  </a>
+
+                  <ul class="dropdown-menu"> 
+                    <li><a href="/logout">Salir</a></li>
+                  </ul>
+
+              </li>
+            </ul>
+
+        </div>
+
+      </div>
+
+    </nav>
+
+    <div class="container" style="margin-top:50px;">
+
+    

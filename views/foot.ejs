@@ -1,0 +1,199 @@
+ 	</div> 
+    <div class="chat-sidebar focus">
+
+      <div class="list-group text-left">
+
+        <p class="text-center visible-xs"><a href="#" class="hide-chat">Ocultar</a></p> 
+
+        <p class="text-center chat-title">Usuarios</p>  
+
+       
+
+         <a href="#" class="list-group-item">
+
+          <i class="fa fa-check-circle connected-status"></i>
+
+          <img src="/assets/img/profile.jpg" class="img-chat img-thumbnail">
+
+          <span class="chat-user-name">Usuario anonimo</span>
+
+        </a>
+        
+
+      </div>
+
+    </div> 
+
+    
+
+    <footer class="welcome-footer">
+
+      <div class="container text-center">
+
+        <p>
+
+          <div class="footer-links">
+
+            <a href="#">Terminos de uso</a> | 
+
+            <a href="#">Politicas de Privacidad</a> | 
+
+            <a href="#">Desarrolladores</a> | 
+
+            <a href="#">Contactenos</a> | 
+
+            <a href="#">A cerca</a>
+
+          </div>   
+
+         Copyright &copy; GN8 - Todos los derechos reservados    
+
+        </p>
+
+      </div>
+
+    </footer>
+
+  </body>
+   
+  <script type="text/javascript"> 
+      
+      $(".btnGuardarQR").click(function(){
+
+        $("#formQR").ajaxSubmit({
+            type: 'post',
+            url: '/generarCodigoQR',
+            data: $("#formQR").serialize(),
+            success: function (data) { 
+                if(data.res=="ok"){
+                  swal(
+                      'Codigo QR registrado!', 
+                      'Presione el boton para proseguir',
+                      'success'
+                    );
+                }else{
+                  if(data.res=="error"){
+                    swal(
+                      'No se pudo registrar el codigo QR!', 
+                      'Presione el boton para proseguir',
+                      'error'
+                    );
+                  }else{
+                    swal(
+                      'El codigo QR ya fue registrado!', 
+                      'Presione el boton para proseguir',
+                      'warning'
+                    );
+                  }
+                }
+            }
+        });
+
+      });
+
+
+
+      var socket = io.connect();
+      
+      //----------------- begin event socket -------------- 
+
+      socket.on('message', function(data){
+          console.log(data.id_post);
+      });
+
+      socket.on('like_post_web', function(data){
+        console.log(data);
+        if($("#"+data.post._id).find("div.stats a.btnLike").attr("data-value")=="0"){
+          $("#"+data.post._id).find("div.stats a.btnLike").attr("data-value","1");
+          $("#"+data.post._id).find("div.stats a.btnLike").css("color","#5272ea");
+        }else{
+          $("#"+data.post._id).find("div.stats a.btnLike").attr("data-value","0");
+          $("#"+data.post._id).find("div.stats a.btnLike").css("color","#828282");
+        }
+        
+        $("#"+data.post._id).find("div.stats a.btnLike").html("<i class='fa fa-thumbs-up icon'></i>"+data.post.likesCount);
+      });
+
+      //----------------- event end socket ---------------
+      //------------- begin event ----------------
+
+      $(".btnGuardarPublicacion").click(function(){
+
+        $(this).parent().parent().parent().parent().ajaxSubmit({
+            type: 'post',
+            url: '/guardarPublicacion',
+            data: $(this).parent().parent().parent().parent().serialize(),
+            success: function (data) { 
+                if(data.res=="ok"){
+                    swal(
+                      'Publicación guardada!', 
+                      'Presione el boton para proseguir',
+                      'success'
+                    );
+                }else{
+                  if(data.res=="update"){
+                    swal(
+                      'Publicación ya guardada!', 
+                      'Presione el boton para proseguir',
+                      'success'
+                    );
+                  }else{                    
+                    swal(
+                      'No se pudo guardar la publicación!', 
+                      'Presione el boton para proseguir',
+                      'danger'
+                    );
+                  }
+                }
+            }
+        });
+
+      });
+
+      $(".btnLike").click(function(){ 
+          socket.emit('like_post_web',{ id_post: $(this).parent().parent().attr("data-value"), id_user: '<%= id %>',like:$(this).attr("data-value")=="1"?"0":"1"}); 
+      });
+
+      $(".btnQr").click(function(){  
+        $('#qrcode').empty();
+        jQuery('#qrcode').qrcode({width: 200,height: 200,text: $(this).attr("data-value")});
+        $(".id_post_qr").val($(this).attr("data-id"));
+        $(".id_usuario_invitado_qr").val('<%= id %>');
+        $(".nombre_post_qr").val($(this).parent().parent().parent().find("div.post-heading div.meta a.post-user-name").text());
+        $(".photo_post_qr").val($(this).parent().parent().parent().find("div.post-image img.image").attr("src"));
+        $(".codigoqr_des_qr").val($(this).attr("data-value"));
+        $(".nombre_usuario_qr").val('<%= nombre %>');
+        $(".photo_url_qr").val('<%= imagen %>');
+      });
+
+      
+
+      $(".add-comment-input").keyup(function(e){
+          if(e.which==13){
+            $(this).parent().find("ul.comments-list").append("<li class='comment'>"+
+                                                                  "<a class='pull-left'>"+
+                                                                    "<img class='avatar' src="+'<%= imagen %>'+">"+
+                                                                  "</a>"+
+                                                                  "<div class='comment-body'>"+
+                                                                    "<div class='comment-heading'>"+
+                                                                      "<h4 class='comment-user-name'>"+
+                                                                        "<a href='#'>Antony andrew lobghi</a>"+
+                                                                      "</h4>"+
+                                                                      "<h5 class='time'>"+
+                                                                      "</h5>"+
+                                                                    "</div>"+
+                                                                    "<p>"+$(this).val()+"</p>"+
+                                                                  "</div>"+
+                                                              "</li>");
+
+            socket.emit('message',{text:$(this).val(),user:'<%= usuario %>',photo_url:'<%= imagen %>',id_post:$(this).parent().parent().attr("id"),id_user:'<%= id %>',})
+
+            $(this).val("");
+          }
+      });
+
+      //------------- end event ----------------
+      
+  </script> 
+  
+</html>
