@@ -19,12 +19,12 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 //app.use('/uploads', express.static('uploads'));
-app.use(session({secret: '_secret_', cookie: { maxAge: 60 * 60 * 1000 }, saveUninitialized: false, resave: false}));
+app.use(session({ secret: '_secret_', cookie: { maxAge: 60 * 60 * 1000 }, saveUninitialized: false, resave: false }));
 
 // configurate static 
 app.use(express.static(__dirname + '/public'));
-app.use('/assets',  express.static(__dirname + '/assets'));
- 
+app.use('/assets', express.static(__dirname + '/assets'));
+
 /**
  * Creacion de un post
  * Paramentros : nombre_post,descripcion,id_usuario,likesCount,liked,codigoQR,createdAt,updateAt
@@ -114,18 +114,24 @@ app.post('/ws/generarCodigoQR', function (req, res) {
   db.collection('invitaciones').insert(invitacion, (err, invitacion) => {
     if (err) return res.json({ res: "error", detail: err })
     db.collection('posts').update(
-      { _id:  mongojs.ObjectId(inputs.id_post) }, { $inc: { limite_codigos: -1 } }, (err, post) =>{
+      { _id: mongojs.ObjectId(inputs.id_post) }, { $inc: { limite_codigos: -1 } }, (err, post) => {
         if (err) return res.json({ res: "error", detail: err })
         // the update is complete 
         return res.json({ res: "ok", invitacion })
       })
-    
+
   });
 });
 app.post('/ws/posts/', function (req, res) {
   var query = req.body.categoria
   var posts = db.collection('posts')
-    .find({ categorias: { $regex: query, $options: "i" } })
+    .find({
+      categorias: { $regex: query, $options: "i" },
+      "fecha_evento":
+        {
+          $gte: new Date((new Date().getTime()))
+        }
+    })
     .skip(10 * (req.body.page - 1)).limit(10)
     .sort({ createdAt: -1 })
     .toArray((err, posts) => {
@@ -251,7 +257,7 @@ app.post('/ws/like_post/', function (req, res) {
 })
 app.post('/ws/codigos_generados_post/', function (req, res) {
   const id = mongojs.ObjectId(req.body.id_post)
-  
+
   var posts = db.collection('invitaciones')
     .find({ id_post: id })
     //.limit(20)
@@ -542,7 +548,7 @@ stdin.addListener('data', function (d) {
 
 //--------- index josue ------------
 app.get('/', function (req, res) {
-  res.render('landing.ejs', {title: 'GN8'})
+  res.render('landing.ejs', { title: 'GN8' })
 })
 
 //--------- home --------------------
@@ -552,104 +558,104 @@ app.get('/index', function (req, res) {
     .sort({ likesCount: -1 })
     .limit(10)
     .toArray((err, posts) => {
-      res.render('index.ejs',{publicaciones:posts});
+      res.render('index.ejs', { publicaciones: posts });
     });
   //res.render('index.ejs');
 });
 
-app.post('/login', function(req, res) { 
+app.post('/login', function (req, res) {
   var inputs = req.body;
   db.collection('users').findOne({
-      username:inputs.usuario,
-      password:inputs.password 
+    username: inputs.usuario,
+    password: inputs.password
   }, function (err, user) {
-      if (user==null) return res.redirect('/');
-      if (user.length==0) return res.redirect('/');
-        req.session.authenticated = true;
-        req.session.user = user.username;
-        req.session.name = user.name;
-        req.session._id = user._id; 
-        req.session.photo = user.photo_url;
-        req.session.flag = user.es_empresa;
-        if (user.photo_url=="") {
-          req.session.photo="/assets/img/profile.jpg";
-        }
-        return res.redirect('/home');
+    if (user == null) return res.redirect('/');
+    if (user.length == 0) return res.redirect('/');
+    req.session.authenticated = true;
+    req.session.user = user.username;
+    req.session.name = user.name;
+    req.session._id = user._id;
+    req.session.photo = user.photo_url;
+    req.session.flag = user.es_empresa;
+    if (user.photo_url == "") {
+      req.session.photo = "/assets/img/profile.jpg";
+    }
+    return res.redirect('/home');
   });
 });
 
-app.get('/logout', function(req, res) {
+app.get('/logout', function (req, res) {
   delete req.session.authenticated;
   res.redirect('/');
 });
 
-app.get('/invitaciones', function (req, res) { 
+app.get('/invitaciones', function (req, res) {
   if (!req.session || !req.session.authenticated) {
     res.redirect('/');
-  }else{
+  } else {
 
-      db.collection('invitaciones')
-        .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id)})
-        .toArray(function(err,invit){
-            res.render('qr.ejs', {
-              usuario : req.session.user,
-              nombre : req.session.name,
-              id : req.session._id,
-              imagen : req.session.photo,
-              tipo : req.session.flag,
-              invitaciones : invit
-            }); 
-        }); 
+    db.collection('invitaciones')
+      .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id) })
+      .toArray(function (err, invit) {
+        res.render('qr.ejs', {
+          usuario: req.session.user,
+          nombre: req.session.name,
+          id: req.session._id,
+          imagen: req.session.photo,
+          tipo: req.session.flag,
+          invitaciones: invit
+        });
+      });
   }
 });
 
-app.get('/home', function(req, res) {
+app.get('/home', function (req, res) {
 
   if (!req.session || !req.session.authenticated) {
     res.redirect('/');
-  }else{
- 
+  } else {
+
     var posts = db.collection('posts')
       .find()
       .skip(10 * (req.body.page - 1)).limit(10)
       .sort({ createdAt: -1 })
-      .toArray((err, posts) => { 
-          db.collection('invitaciones')
-            .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id),estado: "WAIT" })
-            .count(function(err,countw){
+      .toArray((err, posts) => {
+        db.collection('invitaciones')
+          .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id), estado: "WAIT" })
+          .count(function (err, countw) {
 
-              db.collection('invitaciones')
-                .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id),estado: "CHECK" })
-                .count(function(err,countc){
+            db.collection('invitaciones')
+              .find({ id_usuario_invitado: mongojs.ObjectId(req.session._id), estado: "CHECK" })
+              .count(function (err, countc) {
 
-                    db.collection('posts_guardados')
-                      .find({ id_usuario: mongojs.ObjectId(req.session._id) })
-                      .toArray((err, posts_saved) => {
+                db.collection('posts_guardados')
+                  .find({ id_usuario: mongojs.ObjectId(req.session._id) })
+                  .toArray((err, posts_saved) => {
 
-                          res.render('home.ejs', {
-                            usuario : req.session.user,
-                            nombre : req.session.name,
-                            id : req.session._id,
-                            imagen : req.session.photo,
-                            tipo : req.session.flag,
-                            publicaciones : posts,
-                            publicaciones_guardadas : posts_saved, 
-                            invitacionesPendientes : countw,
-                            invitacionesUsadas : countc
-                          });
-                        
-                      });
+                    res.render('home.ejs', {
+                      usuario: req.session.user,
+                      nombre: req.session.name,
+                      id: req.session._id,
+                      imagen: req.session.photo,
+                      tipo: req.session.flag,
+                      publicaciones: posts,
+                      publicaciones_guardadas: posts_saved,
+                      invitacionesPendientes: countw,
+                      invitacionesUsadas: countc
+                    });
 
-                }); 
+                  });
 
-            }); 
+              });
+
+          });
       });
   }
 });
 
 
 app.post('/registrarUsuario', function (req, res) {
-  var inputs = req.body 
+  var inputs = req.body
   var userData = {
     name: inputs.nombreR,
     email: inputs.emailR,
@@ -663,18 +669,18 @@ app.post('/registrarUsuario', function (req, res) {
     createdAt: new Date(),
     updateAt: new Date()
   }
-  db.collection('users').insert(userData, (err, user) => { 
-    if (user.length==0) return res.redirect('/');
-      req.session.authenticated = true;
-      req.session.user = user.username;
-      req.session.name = user.name;
-      req.session._id = user._id;
-      req.session.photo = user.photo_url;
-      req.session.flag = user.es_empresa;
-      if (user.photo_url=="") {
-        req.session.photo="/assets/img/profile.png";
-      }
-      return res.redirect('/home');
+  db.collection('users').insert(userData, (err, user) => {
+    if (user.length == 0) return res.redirect('/');
+    req.session.authenticated = true;
+    req.session.user = user.username;
+    req.session.name = user.name;
+    req.session._id = user._id;
+    req.session.photo = user.photo_url;
+    req.session.flag = user.es_empresa;
+    if (user.photo_url == "") {
+      req.session.photo = "/assets/img/profile.png";
+    }
+    return res.redirect('/home');
   })
 })
 
@@ -703,15 +709,15 @@ app.post('/crearEvento', function (req, res, next) {
   }
 
   db.collection('posts').insert(post, (err, post) => {
-    if (post.length==0) return res.redirect('/');
+    if (post.length == 0) return res.redirect('/');
 
-    return res.redirect('/home'); 
+    return res.redirect('/home');
   });
 });
- 
 
-app.post('/generarCodigoQR', function (req, res) { 
-  var inputs = req.body 
+
+app.post('/generarCodigoQR', function (req, res) {
+  var inputs = req.body
   var invitacionQR = {
     id_post: mongojs.ObjectId(inputs.id_post),
     id_usuario_invitado: mongojs.ObjectId(inputs.id_usuario_invitado),
@@ -729,16 +735,16 @@ app.post('/generarCodigoQR', function (req, res) {
   db.collection('invitaciones')
     .find({ id_post: mongojs.ObjectId(inputs.id_post), id_usuario_invitado: mongojs.ObjectId(inputs.id_usuario_invitado) })
     .toArray((err, invitacion) => {
-        console.log(invitacion);
-       if (invitacion.length <= 0) {
-          db.collection('invitaciones').insert(invitacionQR, (err, inv) => {
-            if (err) return res.json({ res: "error", detail: err })
-            return res.json({ res: "ok", inv })
-          });
-       }else{
-          return res.json({ res: "update", detail: err })
-       }
-    }); 
+      console.log(invitacion);
+      if (invitacion.length <= 0) {
+        db.collection('invitaciones').insert(invitacionQR, (err, inv) => {
+          if (err) return res.json({ res: "error", detail: err })
+          return res.json({ res: "ok", inv })
+        });
+      } else {
+        return res.json({ res: "update", detail: err })
+      }
+    });
 
 });
 
@@ -749,44 +755,44 @@ app.post('/guardarPublicacion', function (req, res) {
     id_post: mongojs.ObjectId(req.body.id_post),
     photo_post: req.body.photo_post,
     nombre_post: req.body.nombre_post,
-    nombre_usuario : req.body.nombre_usuario,
+    nombre_usuario: req.body.nombre_usuario,
     save: req.body.save,
     createdAt: new Date(),
     updateAt: new Date()
   }
 
-    db.collection('posts_guardados')
-      .find({ id_usuario: mongojs.ObjectId(req.body.id_usuario), id_post: mongojs.ObjectId(req.body.id_post) })
-      .toArray((err, posts) => {
-        if (posts.length > 0) {
-            
-            db.collection('posts_guardados').findAndModify({
-              query: {
-                id_usuario: mongojs.ObjectId(req.body.id_usuario),
-                id_post: mongojs.ObjectId(req.body.id_post),
-              },
-              update: {
-                $set: {
-                  id_usuario: mongojs.ObjectId(req.body.id_usuario),
-                  id_post: mongojs.ObjectId(req.body.id_post),
-                  save: req.body.save,
-                  createdAt: new Date(),
-                  updateAt: new Date()
-                }
-              },
-              upsert: true
-            }, (err, post_inserted) => {
-              if (err) return res.json({ res: 'error', detail: err }); 
-              return res.json({ res: 'update', post: post_inserted });
-            });
+  db.collection('posts_guardados')
+    .find({ id_usuario: mongojs.ObjectId(req.body.id_usuario), id_post: mongojs.ObjectId(req.body.id_post) })
+    .toArray((err, posts) => {
+      if (posts.length > 0) {
 
-        }else{
-            db.collection('posts_guardados').insert(post_guardado, (err, posts) => { 
-              if (err) return res.json({ res: "error", detail: err })
-              return res.json({ res: "ok", posts })
-            });
-        }
-      }); 
+        db.collection('posts_guardados').findAndModify({
+          query: {
+            id_usuario: mongojs.ObjectId(req.body.id_usuario),
+            id_post: mongojs.ObjectId(req.body.id_post),
+          },
+          update: {
+            $set: {
+              id_usuario: mongojs.ObjectId(req.body.id_usuario),
+              id_post: mongojs.ObjectId(req.body.id_post),
+              save: req.body.save,
+              createdAt: new Date(),
+              updateAt: new Date()
+            }
+          },
+          upsert: true
+        }, (err, post_inserted) => {
+          if (err) return res.json({ res: 'error', detail: err });
+          return res.json({ res: 'update', post: post_inserted });
+        });
+
+      } else {
+        db.collection('posts_guardados').insert(post_guardado, (err, posts) => {
+          if (err) return res.json({ res: "error", detail: err })
+          return res.json({ res: "ok", posts })
+        });
+      }
+    });
 })
 
 
@@ -802,26 +808,26 @@ function _guardarLikePostWeb(like, socket) {
 
         db.collection('likes_posts')
           .update({ id_post: like.id_post, id_user: like.id_user },
-          { $set: { like: like.like } },
-          function (err, res) {
-            if (err) console.log(err)
-            db.collection('posts').update(
-              { _id: id },
-              {
-                $set: { [campo]: like.like },
-                $inc: { likesCount: like.like==1 ? 1 : -1 }
-              }, function (err, res) {
-                // the update is complete 
-                if (err) console.log(err)
-                // If the message is from the server, then send to everyone.
+            { $set: { like: like.like } },
+            function (err, res) {
+              if (err) console.log(err)
+              db.collection('posts').update(
+                { _id: id },
+                {
+                  $set: { [campo]: like.like },
+                  $inc: { likesCount: like.like == 1 ? 1 : -1 }
+                }, function (err, res) {
+                  // the update is complete 
+                  if (err) console.log(err)
+                  // If the message is from the server, then send to everyone.
 
-                db.collection('posts').findOne({
+                  db.collection('posts').findOne({
                     _id: id
-                }, function (err, posts) {
-                    websocket.emit('like_post', {'like':like,'post':posts});
+                  }, function (err, posts) {
+                    websocket.emit('like_post', { 'like': like, 'post': posts });
+                  });
                 });
-              });
-          })
+            })
       } else {
         //Insert new like
         db.collection('likes_posts').insert(like, (err, liked) => {
@@ -833,11 +839,11 @@ function _guardarLikePostWeb(like, socket) {
               // the update is complete 
               if (err) return console.log(err)
 
-               db.collection('posts').findOne({
-                    _id: id
-                }, function (err, posts) {
-                    websocket.emit('like_post', {'like':like,'post':posts});
-                });
+              db.collection('posts').findOne({
+                _id: id
+              }, function (err, posts) {
+                websocket.emit('like_post', { 'like': like, 'post': posts });
+              });
             })
         });
       }
