@@ -540,9 +540,13 @@ stdin.addListener('data', function (d) {
   }, null /* no socket */, true /* send from server */);
 });
 
+//--------- index josue ------------
+app.get('/', function (req, res) {
+  res.render('landing.ejs', {title: 'GN8'})
+})
 
 //--------- home --------------------
-app.get('/', function (req, res) {
+app.get('/index', function (req, res) {
   db.collection('posts')
     .find()
     .sort({ likesCount: -1 })
